@@ -1,0 +1,19 @@
+repos:
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: "v1.108.0"
+    hooks:
+      - id: terraform_fmt
+      - id: terraform_tflint
+        args:
+        - --args=--disable-rule=terraform_required_providers
+        - --args=--disable-rule=terraform_required_version
+        - --args=--disable-rule=terraform_typed_variables
+        - --args=--disable-rule=terraform_deprecated_lookup
+        - --args=--disable-rule=terraform_unused_declarations
+        - --args=--disable-rule=terraform_deprecated_index
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
