@@ -1,0 +1,13 @@
+plugin "terraform" {
+    enabled = true
+    preset  = "all"
+}
+plugin "google" {
+    enabled = true
+    version = "0.39.0"
+    source  = "github.com/terraform-linters/tflint-ruleset-google"
+}
+
+rule "terraform_unused_declarations" {
+  enabled = false
+}
