@@ -14,6 +14,6 @@ output "url" {
 }
 
 output "bucket" {
-  description = "Cloud Storage bucket resource attributes"
+  description = "Resource attributes of the Cloud Storage bucket"
   value       = google_storage_bucket.bucket
 }
