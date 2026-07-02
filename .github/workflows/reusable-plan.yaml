@@ -26,6 +26,11 @@ on:
 
 jobs:
   plan:
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+
     runs-on: ubuntu-latest
     name: 'Module: ${{ inputs.moduleRootDirectory }}'
     steps:

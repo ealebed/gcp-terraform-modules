@@ -4,6 +4,11 @@ concurrency:
   group: ${{ github.head_ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
@@ -206,6 +211,8 @@ jobs:
   trigger-release:
     needs: [detect, plan]
     if: needs.detect.outputs.is-merge-event == 'true'
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     name: 'Dispatch release event'
     steps:
