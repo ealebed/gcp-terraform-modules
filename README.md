@@ -35,3 +35,6 @@ More details [here](https://github.com/antonbabenko/pre-commit-terraform?tab=rea
 ## Repository configuration
 - Labels `major`, `minor`, `patch` and `no-release` have to be created manually (from GitHub UI).
 - Wiki have to be initialized (create first commit from GitHub UI) manually.
+
+## Dependabot automation
+Minor and patch Dependabot PRs are approved and squash-merged by a GitHub App after required CI passes. Dependabot PRs keep the `no-release` label so CI does not treat them as module releases. See [Dependabot automation](./docs/dependabot-automation.md).
