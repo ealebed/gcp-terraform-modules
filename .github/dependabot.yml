@@ -6,6 +6,7 @@ updates:
       interval: "weekly"
     labels:
       - "no-release"
+      - "dependencies"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -13,3 +14,4 @@ updates:
       interval: "daily"
     labels:
       - "no-release"
+      - "dependencies"
