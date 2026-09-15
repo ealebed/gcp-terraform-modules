@@ -30,16 +30,28 @@ jobs:
       - name: Check PR labels
         id: check_pr_label
         env:
-          PR_URL: ${{github.event.pull_request.html_url}}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          LABELS=$(gh pr view $PR_URL --json labels --jq '.labels[]| select((.name=="minor") or (.name=="major") or (.name=="patch") or (.name=="no-release")) |.name')
-          NUMBER_OF_LABELS=$(echo "$LABELS" |wc -w)
-          if [ "$NUMBER_OF_LABELS" -eq "1" ] ; then
+          LABELS=$(gh pr view "$PR_URL" --json labels --jq '.labels[]| select((.name=="minor") or (.name=="major") or (.name=="patch") or (.name=="no-release")) |.name')
+          NUMBER_OF_LABELS=$(echo "$LABELS" | wc -w)
+          # Dependabot also applies major/minor/patch when those labels exist in
+          # the repo, on top of no-release from dependabot.yml. Human PRs still
+          # need exactly one release-type label so module versioning is unchanged.
+          if [ "$PR_AUTHOR" = "dependabot[bot]" ]; then
+            if echo "$LABELS" | grep -Fxq 'no-release'; then
+              echo "Found: no-release (Dependabot; extra major/minor/patch ignored)"
+              echo "release-type=no-release" >> "$GITHUB_OUTPUT"
+            else
+              echo "::error ::Dependabot PRs must have the no-release label"
+              exit 2
+            fi
+          elif [ "$NUMBER_OF_LABELS" -eq "1" ]; then
             echo "Found: $LABELS"
-            echo "release-type=$LABELS" >> $GITHUB_OUTPUT
-          elif [ "$NUMBER_OF_LABELS" -gt "1" ] ; then
-            echo "::error ::Too many release type labels: $( echo $LABELS | tr '\n' ' ' )"
+            echo "release-type=$LABELS" >> "$GITHUB_OUTPUT"
+          elif [ "$NUMBER_OF_LABELS" -gt "1" ]; then
+            echo "::error ::Too many release type labels: $( echo "$LABELS" | tr '\n' ' ' )"
             exit 1
           else
             echo "::error ::No release type labels found(patch/minor/major/no-release)"
@@ -126,6 +138,38 @@ jobs:
       releaseType: ${{ needs.detect.outputs.release-type }}
     secrets:
       githubToken: ${{ secrets.GITHUB_TOKEN }}
+
+  ci-checks:
+    name: CI checks
+    needs: [detect, validate, lint, analysis, plan]
+    if: ${{ always() && github.event.action != 'closed' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm Detect succeeded and matrix jobs succeeded or skipped
+        env:
+          DETECT: ${{ needs.detect.result }}
+          VALIDATE: ${{ needs.validate.result }}
+          LINT: ${{ needs.lint.result }}
+          ANALYSIS: ${{ needs.analysis.result }}
+          PLAN: ${{ needs.plan.result }}
+        run: |
+          set -euo pipefail
+          echo "detect=$DETECT validate=$VALIDATE lint=$LINT analysis=$ANALYSIS plan=$PLAN"
+          if [ "$DETECT" != "success" ]; then
+            echo "::error ::Detect pull request context did not succeed ($DETECT)"
+            exit 1
+          fi
+          for pair in "validate:$VALIDATE" "lint:$LINT" "analysis:$ANALYSIS" "plan:$PLAN"; do
+            name="${pair%%:*}"
+            result="${pair#*:}"
+            case "$result" in
+              success|skipped) ;;
+              *)
+                echo "::error ::$name did not succeed ($result)"
+                exit 1
+                ;;
+            esac
+          done
 
   comment:
     needs: [detect, plan]
